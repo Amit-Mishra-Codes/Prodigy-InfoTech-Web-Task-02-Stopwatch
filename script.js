@@ -1,0 +1,13 @@
+const display=document.getElementById('display'),startBtn=document.getElementById('start'),pauseBtn=document.getElementById('pause'),lapBtn=document.getElementById('lap'),resetBtn=document.getElementById('reset'),clearBtn=document.getElementById('clear'),lapsEl=document.getElementById('laps'),empty=document.getElementById('empty'),countEl=document.getElementById('count'),bestEl=document.getElementById('best'),statusEl=document.getElementById('status'),dot=document.getElementById('dot');
+let elapsed=0,startAt=0,timer=null,running=false,lastLap=0,laps=[];
+function current(){return elapsed+(running?performance.now()-startAt:0)}
+function fmt(ms){let n=Math.floor(ms/10),hs=n%100,s=Math.floor(n/100)%60,m=Math.floor(n/6000);return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')+'.'+String(hs).padStart(2,'0')}
+function render(){display.textContent=fmt(current())}
+function status(text,on){statusEl.textContent=text;dot.classList.toggle('running',on)}
+function buttons(){startBtn.disabled=running;pauseBtn.disabled=!running;lapBtn.disabled=!running;resetBtn.disabled=elapsed===0&&!running&&laps.length===0;clearBtn.disabled=laps.length===0}
+function start(){if(running)return;startAt=performance.now();running=true;timer=setInterval(render,10);status('Stopwatch is running',true);buttons();render()}
+function pause(){if(!running)return;elapsed=current();running=false;clearInterval(timer);timer=null;status('Paused · take your time',false);buttons();render()}
+function reset(){running=false;clearInterval(timer);timer=null;elapsed=0;startAt=0;lastLap=0;laps=[];drawLaps();render();status('Ready when you are',false);buttons()}
+function lap(){if(!running)return;const total=current(),duration=total-lastLap;laps.unshift({number:laps.length+1,total,duration});lastLap=total;drawLaps();buttons()}
+function drawLaps(){lapsEl.innerHTML='';empty.hidden=laps.length>0;countEl.textContent=laps.length;const best=laps.length?Math.min(...laps.map(x=>x.duration)):null;bestEl.textContent=best===null?'—':fmt(best);laps.forEach(x=>{const li=document.createElement('li');if(x.duration===best)li.classList.add('best');const a=document.createElement('span');a.className='number';a.textContent='Lap '+String(x.number).padStart(2,'0');const b=document.createElement('span');b.className='total';b.textContent=fmt(x.total);const c=document.createElement('span');c.className='delta';c.textContent='+'+fmt(x.duration);li.append(a,b,c);lapsEl.appendChild(li)})}
+startBtn.addEventListener('click',start);pauseBtn.addEventListener('click',pause);lapBtn.addEventListener('click',lap);resetBtn.addEventListener('click',reset);clearBtn.addEventListener('click',()=>{laps=[];lastLap=current();drawLaps();buttons()});render();buttons();
